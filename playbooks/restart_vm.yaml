@@ -5,7 +5,7 @@
   tasks:
     - name: Wait until the VirtualMachine is started
       redhat.openshift_virtualization.kubevirt_vm:
-        name: "{{ item.metadata.name }}"
-        namespace: "{{ item.metadata.namespace }}"
+        name: "{{ vmname }}"
+        namespace: "{{ target_namespace }}"
         running: true
         wait: true

@@ -23,3 +23,5 @@
           job_args:
             extra_vars:
               alertmanager: "{{ event.payload }}"
+              vmname: "{{ event.payload.alerts[0].labels.name }}"
+              target_namespace: "{{ event.payload.alerts[0].labels.namespace }}"
