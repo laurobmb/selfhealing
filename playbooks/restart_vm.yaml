@@ -3,8 +3,7 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    # 1. GARANTIA: Define que a VM deve sempre rodar.
-    # Se ela estava com estratégia 'Manual' ou 'Halted', isso a prepara para subir.
+
     - name: Ensure VM RunStrategy is set to Always
       kubernetes.core.k8s:
         state: patched
@@ -15,10 +14,8 @@
         definition:
           spec:
             runStrategy: Always
-            running: null # Remove o campo depreciado para evitar conflitos
+            running: null
 
-    # 2. AÇÃO: Deleta a instância atual (VMI).
-    # Como definimos 'Always' acima, o OpenShift vai criar uma nova imediatamente.
     - name: Delete VMI to trigger a restart
       kubernetes.core.k8s:
         state: absent
@@ -28,7 +25,6 @@
         namespace: "{{ target_namespace }}"
       ignore_errors: true
 
-    # 3. VERIFICAÇÃO: Espera o OpenShift fazer o trabalho dele.
     - name: Wait for VMI to be Running and Ready
       kubernetes.core.k8s_info:
         api_version: kubevirt.io/v1
@@ -36,10 +32,8 @@
         name: "{{ vmname }}"
         namespace: "{{ target_namespace }}"
       register: vmi_status
-      until: 
+      until:
         - vmi_status.resources | length > 0
         - vmi_status.resources[0].status.phase == 'Running'
-        # Opcional: Checar se está Ready também (depende do agente qemu-guest)
-        # - vmi_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
       retries: 30
       delay: 10
