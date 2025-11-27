@@ -13,7 +13,9 @@
 
   rules:
     - name: condicao DEBUG
-      condition: event.payload.alerts is defined
+      condition: >
+        (event.payload.alerts is defined) and
+        (event.payload.alerts.labels.alertname == "VmBastionCriticoDesligada")
       action:
         debug:
           var: event.payload
