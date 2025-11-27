@@ -3,9 +3,18 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Wait until the VirtualMachine is started
+    - name: Delete VMI to trigger a restart (The VM controller will respawn it)
+      kubernetes.core.k8s:
+        state: absent
+        api_version: kubevirt.io/v1
+        kind: VirtualMachineInstance
+        name: "{{ vmname }}"
+        namespace: "{{ target_namespace }}"
+      ignore_errors: true 
+
+    - name: Wait for VM to be running again
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ vmname }}"
         namespace: "{{ target_namespace }}"
-        running: true
+        run_strategy: Always
         wait: true
