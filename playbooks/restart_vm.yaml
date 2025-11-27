@@ -1,9 +1,24 @@
 ---
-- name: Restart vm
+- name: Hard Restart VM (Safe Method)
   hosts: localhost
   gather_facts: false
   tasks:
-    # Passo 1: Força o reboot matando a instância atual
+    # 1. GARANTIA: Define que a VM deve sempre rodar.
+    # Se ela estava com estratégia 'Manual' ou 'Halted', isso a prepara para subir.
+    - name: Ensure VM RunStrategy is set to Always
+      kubernetes.core.k8s:
+        state: patched
+        kind: VirtualMachine
+        api_version: kubevirt.io/v1
+        name: "{{ vmname }}"
+        namespace: "{{ target_namespace }}"
+        definition:
+          spec:
+            runStrategy: Always
+            running: null # Remove o campo depreciado para evitar conflitos
+
+    # 2. AÇÃO: Deleta a instância atual (VMI).
+    # Como definimos 'Always' acima, o OpenShift vai criar uma nova imediatamente.
     - name: Delete VMI to trigger a restart
       kubernetes.core.k8s:
         state: absent
@@ -13,8 +28,7 @@
         namespace: "{{ target_namespace }}"
       ignore_errors: true
 
-    # Passo 2: Espera a nova instância subir e ficar "Ready"
-    # Substituímos o módulo bugado por uma verificação de estado direta
+    # 3. VERIFICAÇÃO: Espera o OpenShift fazer o trabalho dele.
     - name: Wait for VMI to be Running and Ready
       kubernetes.core.k8s_info:
         api_version: kubevirt.io/v1
@@ -22,11 +36,10 @@
         name: "{{ vmname }}"
         namespace: "{{ target_namespace }}"
       register: vmi_status
-      # Loop de espera:
-      # 1. A lista de resources tem que ter algo (a VMI foi criada)
-      # 2. O Status da fase deve ser Running
       until: 
         - vmi_status.resources | length > 0
         - vmi_status.resources[0].status.phase == 'Running'
-      retries: 20   # Tenta 20 vezes
-      delay: 10     # Espera 10 segundos entre tentativas (Total ~3 min)
+        # Opcional: Checar se está Ready também (depende do agente qemu-guest)
+        # - vmi_status.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length > 0
+      retries: 30
+      delay: 10
