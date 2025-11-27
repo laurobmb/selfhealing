@@ -16,6 +16,7 @@
       redhat.openshift_virtualization.kubevirt_vm:
         name: "{{ vmname }}"
         namespace: "{{ target_namespace }}"
-        # run_strategy: Always
-        running: true
+        run_strategy: Always
+        spec:
+          running: true
         wait: true
