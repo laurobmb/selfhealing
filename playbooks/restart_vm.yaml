@@ -3,7 +3,8 @@
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Delete VMI to trigger a restart (The VM controller will respawn it)
+    # Passo 1: Força o reboot matando a instância atual
+    - name: Delete VMI to trigger a restart
       kubernetes.core.k8s:
         state: absent
         api_version: kubevirt.io/v1
@@ -12,11 +13,20 @@
         namespace: "{{ target_namespace }}"
       ignore_errors: true
 
-    - name: Wait for VM to be running again
-      redhat.openshift_virtualization.kubevirt_vm:
+    # Passo 2: Espera a nova instância subir e ficar "Ready"
+    # Substituímos o módulo bugado por uma verificação de estado direta
+    - name: Wait for VMI to be Running and Ready
+      kubernetes.core.k8s_info:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachineInstance
         name: "{{ vmname }}"
         namespace: "{{ target_namespace }}"
-        #run_strategy: Always
-        spec:
-          running: true
-        wait: true
+      register: vmi_status
+      # Loop de espera:
+      # 1. A lista de resources tem que ter algo (a VMI foi criada)
+      # 2. O Status da fase deve ser Running
+      until: 
+        - vmi_status.resources | length > 0
+        - vmi_status.resources[0].status.phase == 'Running'
+      retries: 20   # Tenta 20 vezes
+      delay: 10     # Espera 10 segundos entre tentativas (Total ~3 min)
