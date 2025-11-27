@@ -1,0 +1,16 @@
+---
+- name: Aplica PrometheusRule para monitoramento de VM no OpenShift
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  
+  tasks:
+    - name: Garantir que a regra de alerta da VM esteja presente
+      kubernetes.core.k8s:
+        state: present
+        src: files/vm-power-off-alert.yaml
+      register: deploy_result
+      
+#    - name: Exibir Estrutura de Resultados
+#      ansible.builtin.debug:
+#        var: deploy_result

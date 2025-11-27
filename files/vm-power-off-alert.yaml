@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vm-bastion-power-off-alert
+  namespace: openshift-mtv
+spec:
+  groups:
+    - name: virtualmachine-alerts
+      rules:
+        - alert: VmBastionCriticoDesligada
+          expr: |
+            kubevirt_vm_info{namespace="openshift-mtv", name=~"lagomes-bastion|malima-bastion"}
+            and
+            kubevirt_vm_info{namespace="openshift-mtv", name=~"lagomes-bastion|malima-bastion",status="stopped"}
+          for: 1m
+          labels:
+            severity: critical
+            context: virtualization
+          annotations:
+            summary: "VM {{ $labels.vm }} no namespace {{ $labels.namespace }} está Desligada (Stopped)."
+            description: "A Máquina Virtual de Bastion ({{ $labels.vm }}) está no estado 'Stopped' por mais de 5 minutos e requer atenção imediata."

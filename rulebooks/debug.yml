@@ -1,0 +1,24 @@
+---
+- name: Listen for events from AlertManager
+  hosts: localhost
+
+  sources:
+    - name: listen for alerts
+      ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 5001
+        data_alerts_path: alerts
+        data_host_path: labels.instance
+        data_path_separator: .
+
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5002
+      filters:
+        - ansible.eda.dashes_to_underscores:
+
+  rules:
+    - name: Debug Hello event
+      condition: event.alert is defined
+      action:
+        debug:

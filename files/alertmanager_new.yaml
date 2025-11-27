@@ -1,0 +1,56 @@
+global:
+  http_config:
+    proxy_from_environment: true
+inhibit_rules:
+- equal:
+  - namespace
+  - alertname
+  source_matchers:
+  - severity = critical
+  target_matchers:
+  - severity =~ warning|info
+- equal:
+  - namespace
+  - alertname
+  source_matchers:
+  - severity = warning
+  target_matchers:
+  - severity = info
+  
+receivers:
+# --- Receivers Originais ---
+- name: Default
+- name: Watchdog
+- name: Critical
+  
+# --- 🎯 Novo Receiver de Webhook ---
+- name: Webhook-Critico
+  webhook_configs:
+    - url: 'http://10.36.252.51:5001' # URL do Webhook
+      send_resolved: true # Opcional: Envia notificação quando o alerta é resolvido
+      
+route:
+  group_by:
+  - namespace
+  group_interval: 5m
+  group_wait: 30s
+  receiver: Default
+  repeat_interval: 12h
+  
+  routes:
+  - matchers:
+    - alertname = Watchdog
+    receiver: Watchdog
+    
+  # --- 🚦 Nova Rota para o Webhook Critico ---
+  # Esta rota filtra alertas com severity=critical E prometheus=openshift-monitoring/k8s
+  - matchers:
+    - severity = critical
+    - prometheus = openshift-monitoring/k8s
+    receiver: Webhook-Critico # Aponta para o novo receiver
+    continue: true # Opcional: Permite que o alerta continue a ser processado por outras rotas (como a rota 'Critical' abaixo)
+    
+  # Rota original para Critical (mantida para evitar quebras)
+  - matchers:
+    - severity = critical
+    receiver: Critical
