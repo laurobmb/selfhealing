@@ -22,4 +22,4 @@
           organization: Default
           job_args:
             extra_vars:
-              vpn_automations: "{{ event.payload.alerts }}"
+              alertmanager: "{{ event.payload }}"
