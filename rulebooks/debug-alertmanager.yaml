@@ -17,3 +17,16 @@
       action:
         debug:
           var: event.payload
+
+    - name: Adiciona user do grupo de VPN
+      condition: >
+        (event.payload.vpn is defined) and
+        (event.payload.vpn.tipo == "request_access")
+      action:
+        run_job_template:
+          name: "VPN - Add user AD to VPN"
+          organization: devops
+          job_args:
+            extra_vars:
+              vpn_automations: "{{ event.payload.vpn }}"
+            instance_groups: [2]

@@ -26,7 +26,7 @@ receivers:
 # --- 🎯 Novo Receiver de Webhook ---
 - name: Webhook-Critico
   webhook_configs:
-    - url: 'http://10.36.252.51:5001' # URL do Webhook
+    - url: 'http://10.36.252.51:5001/alerts' # URL do Webhook
       send_resolved: true # Opcional: Envia notificação quando o alerta é resolvido
       
 route:
