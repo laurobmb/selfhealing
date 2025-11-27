@@ -21,4 +21,4 @@
     - name: Debug Hello event
       condition: event.alert is defined
       action:
-        debug:
+        debug: event.payload
