@@ -14,9 +14,9 @@
   rules:
     - name: condicao DEBUG
       condition: >
-        (event.payload.alerts is defined) and
-        (event.payload.alerts | length > 0) and
-        (event.payload.alerts[0].labels.alertname == "VmBastionCriticoDesligada")
+        event.payload.alerts is defined and
+        event.payload.alerts | length > 0 and
+        event.payload.alerts[0].labels.alertname == "VmBastionCriticoDesligada"
       action:
         debug:
           var: event.payload
